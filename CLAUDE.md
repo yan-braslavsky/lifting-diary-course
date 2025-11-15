@@ -24,6 +24,9 @@ When implementing a feature or making changes:
 4. Only deviate from docs if there's a clear technical reason
 
 If documentation is missing or unclear, ask the user before proceeding.
+Update this section of the CLAUED.md file every time a new document is generated under `/docs` folder with the exact files it contains:
+-`/docs/ui.md` 
+-`/docs/data-fetching.md` 
 
 ## Development Commands
 
