@@ -72,3 +72,72 @@ export async function getUserWorkouts() {
     orderBy: [desc(workouts.startedAt)],
   });
 }
+
+/**
+ * Get a single workout by ID for the authenticated user
+ */
+export async function getUserWorkoutById(workoutId: number) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const workout = await db.query.workouts.findFirst({
+    where: and(
+      eq(workouts.id, workoutId),
+      eq(workouts.userId, userId)
+    ),
+    with: {
+      workoutExercises: {
+        orderBy: (workoutExercises, { asc }) => [asc(workoutExercises.order)],
+        with: {
+          exercise: true,
+          sets: {
+            orderBy: (sets, { asc }) => [asc(sets.setNumber)],
+          },
+        },
+      },
+    },
+  });
+
+  return workout;
+}
+
+/**
+ * Update a workout's basic information
+ */
+export async function updateWorkout(workoutId: number, data: {
+  name?: string;
+  startedAt?: Date;
+  completedAt?: Date | null;
+}) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Verify ownership before updating
+  const existingWorkout = await db.query.workouts.findFirst({
+    where: and(
+      eq(workouts.id, workoutId),
+      eq(workouts.userId, userId)
+    ),
+  });
+
+  if (!existingWorkout) {
+    throw new Error("Workout not found or unauthorized");
+  }
+
+  const [updatedWorkout] = await db
+    .update(workouts)
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(workouts.id, workoutId))
+    .returning();
+
+  return updatedWorkout;
+}
